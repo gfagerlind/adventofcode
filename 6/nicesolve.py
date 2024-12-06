@@ -55,6 +55,7 @@ with open(sys.argv[1]) as f:
         # now for fancy, make candidate
         cc = {**cords, visit: "O"}
         # find out if this is obstructing by looping, only consider first collision
+        # ie. jump to right before we collide, and start running from there.
         curr = visits[visit][0]
         # take a step back!
         curpos = visit[0] - rotation[curr][0], visit[1] - rotation[curr][1]
