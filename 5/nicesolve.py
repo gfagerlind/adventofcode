@@ -42,10 +42,11 @@ def create_right_list(l, r):
 def manage_page(p, ruledict):
     pages = p.split(",")
     altpage = create_right_list(pages, ruledict)
+    mid = int(altpage[int((len(pages) - 1) / 2)])
     if pages == altpage:
-        return int(altpage[int((len(pages) - 1) / 2)]), 0
+        return mid, 0
     else:
-        return 0, int(altpage[int((len(pages) - 1) / 2)])
+        return 0, mid
 
 
 with open(sys.argv[1]) as f:
