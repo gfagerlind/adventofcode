@@ -26,18 +26,23 @@ with open(sys.argv[1]) as f:
         multi_plus_sums = set([1])
         concat_sums = set()
         for n in nums:
-            update_sum = set()
-            concat_update_sums = set()
-            for c in multi_plus_sums:
-                if c <= calib:
-                    update_sum.update((c * n, c + n))
-                    concat_update_sums.add(int(str(c) + str(n)))
-            for c in concat_sums:
-                if c <= calib:
-                    concat_update_sums.update((c * n, c + n))
-                    concat_update_sums.add(int(str(c) + str(n)))
-            multi_plus_sums = update_sum
-            concat_sums = concat_update_sums | update_sum
+            added_concat_sums = {
+                int(str(c) + str(n)) for c in multi_plus_sums if c <= calib
+            }
+            multi_plus_sums = {
+                p for c in multi_plus_sums for p in (c * n, c + n) if c <= calib
+            }
+            concat_sums = (
+                {
+                    p
+                    for c in concat_sums
+                    for p in (c * n, c + n, int(str(c) + str(n)))
+                    if c <= calib
+                }
+                | added_concat_sums
+                | multi_plus_sums
+            )
+
         if calib in multi_plus_sums:
             tot_sum += calib
             tot_concat_sum += calib
