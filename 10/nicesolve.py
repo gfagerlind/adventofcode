@@ -24,6 +24,7 @@ with open(sys.argv[1]) as f:
     tot2 = 0
     for k, v in cords.items():
         if v == 0:
+            # routeheads contains head position: number of routes to this head
             routeheads = {k: 1}
             for height in range(1,10):
                 newrouteheads = defaultdict(lambda:0)
