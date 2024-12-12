@@ -1,6 +1,4 @@
 import sys
-from collections import defaultdict
-from itertools import combinations
 
 inp = """\
 RRRRIICCFF
@@ -30,83 +28,43 @@ with open(sys.argv[1]) as f:
     }
     regions = list()
     for k, v in cords.items():
-        # check up and left
         region = None
-        add_fence = 4
-        print(f'testing {k} {v}')
-        if k - 1 in cords and cords[k-1] == v:
-            for r in regions:
-                if k-1 in r[2]:
-                    region = r
-                    # print(f'{k} is linked to {k-1} {r}')
-                    break
-            add_fence -= 2
-        if k - 1j in cords and cords[k - 1j] == v:
-            add_fence -= 2
-            for r in regions:
-                if k - 1j in r[2]:
-                    if region and region != r:
-                        regions.remove(r)
-                        region[0] += r[0]
-                        region[1] += r[1]
-                        region[2] |= r[2]
-                    else:
-                       region = r
-        if not region:
-            region = [0,0,set(),v]
+        # fence is 4 minus
+        # for side in (top, left), if shared, reduce fence with 2
+        add_fence = (
+            4 - 2 * (cords.get(k - 1, None) == v) - 2 * (cords.get(k - 1j, None) == v)
+        )
+        if add_fence < 4:
+            # if fence is less than four, there are regions, check
+            # which one to add the fence to.
+            # If we are the tunnel between two regions, merge them
+            rs = [
+                r
+                for r in regions
+                if (k - 1 in r[0] and cords[k - 1] == v)
+                or (k - 1j in r[0] and cords[k - 1j] == v)
+            ]
+            region = rs[0]
+            if len(rs) > 1:
+                # merge
+                region[0] |= rs[1][0]
+                region[1] += rs[1][1]
+                regions.remove(rs[1])
+        else:
+            region = [set(), 0]
             regions.append(region)
-        region[0] += 1
+        region[0].add(k)
         region[1] += add_fence
-        region[2].add(k)
-        # post processing for part 2
-    print("")
     for r in regions:
-        # for each region
-        tot_size = 0
-        print(r[3])
-        for k in r[2]:
-            sides = 0
-            print(k)
-            if k - 1 not in r[2]:
-                sides += 1
-                print("top is side")
-                # then top is a side
-                # check top
-                print(f"top shared {k - 1j} {k - 1j in r[2]} {k - 1 - 1j not in r[2]}")
-                if k - 1j in r[2] and k - 1 - 1j not in r[2]:
-                    # side shared, decrease with one
-                    sides -= 1
-            if k + 1 not in r[2]:
-                sides += 1
-                print("bottom is side")
-                # then bottom is a side
-                print(f"{k - 1j} {k - 1j in r[2]} {k + 1 - 1j} {k + 1 - 1j not in r[2]}")
-                if k - 1j in r[2] and k + 1 - 1j not in r[2]:
-                    # side shared, decrease with one
-                    sides -= 1
-                    print("bottom shared")
-            if k - 1j not in r[2]:
-                sides += 1
-                print("left is side")
-                # then left is a side
-                print(f"{k - 1} {k - 1 in r[2]} {k - 1 - 1j} {k - 1 - 1j not in r[2]}")
-                if k - 1 in r[2] and k - 1 - 1j not in r[2]:
-                    # side shared, decrease with one
-                    sides -= 1
-                    print("left shared")
-            if k + 1j not in r[2]:
-                sides += 1
-                print("right is side")
-                # then right is a side
-                print(f"{k - 1} {k - 1 in r[2]} {k - 1 + 1j} {k - 1 + 1j not in r[2]}")
-                if k - 1 in r[2] and k - 1 + 1j not in r[2]:
-                    # side shared, decrease with one
-                    sides -= 1
-                    print("right shared")
-            print(f"{sides=}")
-            tot_size += sides
+        # again, check up and left, for each side we have that we don't share
+        # add it
+        tot_size = sum(
+            (k + x * y not in r[0] and (k + y not in r[0] or k + x * y + y in r[0]))
+            for x in (1j, -1j)
+            for y in (-1j, -1)
+            for k in r[0]
+        )
         r.append(tot_size)
-    # regions[3] = v
-    print("\n".join([f"{l[0]} {l[1]} {l[3]} {l[4]}"  for l in regions]))
-    print(sum(x[0] * x[1] for x in regions))
-    print(sum(x[0] * x[4] for x in regions))
+    print("\n".join([f"{l[0]} {l[1]} {l[2]}" for l in regions]))
+    print(sum(len(x[0]) * x[1] for x in regions))
+    print(sum(len(x[0]) * x[2] for x in regions))
