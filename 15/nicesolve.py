@@ -110,28 +110,23 @@ def push(p, d, cords, attempt=False):
 with open(sys.argv[1]) as f:
     inp = f.read()
     inp_s, moves = inp.split("\n\n")
-    inp_s = inp_s.split("\n")
-    cords1 = {x + y * 1j: v for x, r in enumerate(inp_s) for y, v in enumerate(r)}
-    cords1["@"] = [k for k, v in cords1.items() if v == "@"][0]
-    cords2 = {}
-    for x, r in enumerate(inp_s):
-        for y, v in enumerate(r):
-            v = inp_s[x][y]
-            bp = x + y * 2 * 1j
-            if v == "#":
-                cords2[bp] = v
-                cords2[bp + 1j] = v
-            if v == "O":
-                cords2[bp] = "["
-                cords2[bp + 1j] = "]"
-            if v == "@":
-                cords2[bp] = "@"
-                cords2["@"] = bp
-    moves = [char2move(m) for m in moves.replace("\n", "")]
-    for i, m in enumerate(moves):
-        for cords in cords1, cords2:
-            if push(cords["@"], m, cords):
-                cords["@"] += m
-    for c in cords1, cords:
-        del c["@"]
+    moves = moves.replace("\n", "")
+    inputs = (
+        inp_s.split("\n"),
+        inp_s.replace(".", "..")
+        .replace("O", "[]")
+        .replace("#", "##")
+        .replace("@", "@.")
+        .split("\n"),
+    )
+    cords = [
+        {x + y * 1j: v for x, r in enumerate(i) for y, v in enumerate(r)}
+        for i in inputs
+    ]
+    for c in cords:
+        p = [k for k, v in c.items() if v == "@"][0]
+        for m in map(char2move, moves):
+            if push(p, m, c):
+                p += m
+    for c in cords:
         print(sum(100 * p.real + p.imag for p, v in c.items() if v in "O["))
