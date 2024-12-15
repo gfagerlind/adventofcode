@@ -38,17 +38,17 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
 
 # <^^>>>vv<v>>v<<
 # """
-inp = """\
-#######
-#...#.#
-#.....#
-#..OO@#
-#..O..#
-#.....#
-#######
+# inp = """\
+# #######
+# #...#.#
+# #.....#
+# #..OO@#
+# #..O..#
+# #.....#
+# #######
 
-<vv<<^^<<^^
-"""
+# <vv<<^^<<^^
+# """
 def char2move(s):
     if s == '<':
         return -1j
@@ -58,6 +58,16 @@ def char2move(s):
         return -1
     if s == 'v':
         return 1
+
+def move2char(s):
+    if s == -1j:
+        return '<'
+    if s == 1j:
+        return '>'
+    if s == -1:
+        return '^'
+    if s == 1:
+        return 'v'
 
 def pp(s, lx, ly):
     for x in range(lx):
@@ -70,57 +80,56 @@ def pp(s, lx, ly):
 
 def push(p, d, cords,attempt=False):
     np = cords.get(p+d,'None')
-    print(p+d,np)
     if np == '#':
         return False
-    if np in 'O[]' and not push(p+d, d, cords, attempt=attempt):
-        return False
-    if np in '[]' and d not in (-1j,1j):
-        if not push(p+d, d, cords, attempt=True):
-            return False
-        if np == '[' and not push(p+d + 1j, d, cords, attempt=True):
-            return False
-        if np == ']' and not push(p+d - 1j, d, cords, attempt=True):
-            return False
-        push(p+d, d, cords)
+    if np in '[]' and d in (-1,1):
         if np == '[':
-            push(p+d + 1, d, cords)
-        if np == ']':
-            push(p+d - 1, d, cords)
-    if attempt:
-        return True
-    if p in cords:
-        print(f'moving {cords[p]} from {p} to {p+d}')
+            ps = p+1j
+        else:
+            ps = p-1j
+        if not push(p+d,d,cords, attempt=True):
+            return False
+        if not push(ps+d,d,cords, attempt=True):
+            return False
+        if attempt:
+            return True
+        else:
+            push(p+d, d, cords)
+            push(ps+d,d,cords)
+    elif np in 'O[]' and not push(p+d, d, cords):
+        # no attempt needed due since Os are only in variant 1,
+        # and [] pushed up or down are caught above
+        return False
+    if p in cords and not attempt:
         cords[p+d] = cords.pop(p)
     return True
 
 with open(sys.argv[1]) as f:
-    # inp = f.read()
+    inp = f.read()
     inp_s, moves = inp.split("\n\n")
     inp_s = inp_s.split('\n')
-    cords = {
+    cords1 = {
         x + y * 1j: inp_s[x][y] for x in range(len(inp_s)) for y in range(len(inp_s[x]))
     }
+    cords1['@'] = [k for k,v in cords1.items() if v =="@"][0]
     cords2 = {}
     for x in range(len(inp_s)):
         for y in range(len(inp_s[x])):
             v = inp_s[x][y]
+            bp = x + y*2 * 1j
             if v == '#':
-                cords2[x + y*2 * 1j] = v
-                cords2[x + y*2 * 1j + 1j] = v
+                cords2[bp] = v
+                cords2[bp + 1j] = v
             if v == 'O':
-                cords2[x + y*2 * 1j] = '['
-                cords2[x + y*2 * 1j + 1j] = ']'
+                cords2[bp] = '['
+                cords2[bp + 1j] = ']'
             if v == '@':
-                cords2[x + y*2 * 1j] = '@'
+                cords2[bp] = '@'
+                cords2['@'] = bp
     moves = [char2move(m) for m in moves.replace('\n','')]
-    print(cords2, '\n', moves)
-    rp = [k for k,v in cords2.items() if v =="@"][0]
-    print(rp)
     for i,m in enumerate(moves):
-        print(i,m)
-        pp(cords2, 10,20)
-        if push(rp, m, cords2):
-            rp = rp+m
-    pp(cords2, 10,20)
-    print(sum(100 * p.real + p.imag for p,v in cords.items() if v in 'O['))
+        for cords in cords1, cords2:
+            if push(cords['@'], m, cords):
+                cords['@'] += m
+    print(sum(100 * p.real + p.imag for p,v in cords1.items() if p != '@' and v in 'O['))
+    print(sum(100 * p.real + p.imag for p,v in cords2.items() if p != '@' and v in 'O['))
