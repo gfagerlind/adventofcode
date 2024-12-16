@@ -65,29 +65,29 @@ with open(sys.argv[1]) as f:
     seats = set()
     mincost = None
     while len(candidates):
-        p, route, pd, c = candidates.pop(0)
-        if mincost and c > mincost:
-            continue
-        if (p, pd) in visited and visited[(p, pd)] < c:
-            # if we have already visited this point from this direction skip, and the cost is worse
-            # We need to consider equal paths for part2, otherwise the cost could be skipped
-            continue
-        visited[(p, pd)] = c
-        if p == stop:
-            if mincost == None or c < mincost:
-                mincost = c
-                seats = route
-            if c == mincost:
-                seats |= route
+        p, route, prev_d, c = candidates.pop(0)
         for d in (1, -1, 1j, -1j):
-            if p + d not in valid:
+            pd = p + d
+            if pd not in valid or pd in route:
+                # if not path or route has already traversed this point
                 continue
-            if p + d in route:
-                # if this route has already traversed this point
+            cost = c + 1 + (1000 if prev_d != d else 0)
+            if mincost and cost > mincost:
+                # if a cheaper complete path exists
                 continue
-            cost = c + 1 + (1000 if pd != d else 0)
-            bisect.insort(
-                candidates, (p + d, route | {p + d}, d, cost), key=lambda x: x[3]
-            )
+            if pd == stop:
+                if mincost == None or cost < mincost:
+                    mincost = cost
+                    seats = route | {pd}
+                if cost == mincost:
+                    seats |= route | {pd}
+                # no need to continue from a successful route
+                continue
+            if (pd, d) in visited and visited[(pd, d)] < cost:
+                # if we have already visited this point from this direction skip, and the cost is worse
+                # We need to consider equal paths for part2, otherwise the cost could be skipped
+                continue
+            visited[(pd, d)] = cost
+            bisect.insort(candidates, (pd, route | {pd}, d, cost), key=lambda x: x[3])
     print(mincost)
     print(len(seats) + 1)
