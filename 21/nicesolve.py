@@ -36,20 +36,20 @@ dirpad = {
 }
 
 """
-best is 'A', '>', 'v', '<', 
-best is '<', 'v', '^', 'A', 
-best is 'A', '^', 
-best is '^', 'A', 
-best is 'A', '>', 'v
-best is '>', 'v', '^', 
-best is 'A', '>', 'v', 
-best is 'v', '^', 'A', 
-best is 'v', '<', 
-best is '^', 'v', '>', 
-best is '>', 'A', 
-best is '<', 'v', '^', 
-best is 'v', '>', 
-best is '^', 'v', '<', 
+ ('<', 'A'),
+ ('<', '^'),
+ ('>', 'A'),
+ ('>', '^')])
+ ('>', 'v'),
+ ('A', '<'),
+ ('A', '>'),
+ ('A', '^'),
+ ('A', 'v'),
+ ('^', '<'),
+ ('^', 'A'),
+ ('v', '<'),
+ ('v', '>'),
+ ('v', 'A'),
 """
 
 cache = {}
@@ -59,7 +59,7 @@ def stepsFromDirPad(start, stop, depth=3, noopt=None):
         return (*cache[(start[0], stop)],)
     if start[0] == stop:
         return ((start,),)
-    elif depth > 0:
+    if depth > 0:
         minlen = None
         res = []
         for i in sorted(
@@ -87,7 +87,6 @@ def stepsFromDirPad(start, stop, depth=3, noopt=None):
                     shortes = candidateshort
                     best = c
             res = [best]
-            print(len(cache))
             cache[(start[0], stop)] = res
         return (*res,)
     return ()
@@ -118,7 +117,14 @@ def stepsFromNumPad(start, stop, depth=5, noopt=None):
 def getvariants(char, prev, func, noopt):
     return [[d[1] for d in c[1:]] for c in func((prev, None), char, noopt=noopt)]
 
+cache2 = {}
 def runString(inp, func, noopt=False):
+    global cache2
+    if func == stepsFromDirPad and not noopt:
+        if inp in cache2:
+            return cache2[inp]
+        inps = inp.split('A', maxsplit=1)
+        print(inps, inp)
     prev = "A"
     candidates = ([],)
     for char in inp:
@@ -129,6 +135,8 @@ def runString(inp, func, noopt=False):
             for candidate in candidates
             for variant in variants
         ]
+    if func == stepsFromDirPad and not noopt:
+        cache2[inp] = {"".join(candidate) for candidate in candidates}
     return {"".join(candidate) for candidate in candidates}
 
 
@@ -136,14 +144,8 @@ with open(sys.argv[1]) as f:
     inp = f.read()
     summa = 0
     for line in inp.strip().split("\n"):
-        # res = {
-        #     c
-        #     for a in runString(line, stepsFromNumPad)
-        #     for b in runString(a, stepsFromDirPad)
-        #     for c in runString(b, stepsFromDirPad)
-        # }
         res = runString(line, stepsFromNumPad)
-        for i in range(0,8):
+        for i in range(0,10):
             print(f"{i} {len(res)}")
             res = {q for r in res for q in runString(r, stepsFromDirPad)}
         add = len(sorted(res, key=len)[0]) * int(line[:-1])
