@@ -53,8 +53,6 @@ with open(sys.argv[1]) as f:
         )
     )
     max = 0
-    for s in allsets:
-        print(s.get((-2, 1, -1, 3)))
     for k in set(k for s in allsets for k in s):
         # look for k in each dict of all elements in all sets and sum up.
         # max sum is the key
