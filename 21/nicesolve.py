@@ -8,10 +8,38 @@ inp = """\
 456A
 379A
 """
+idealmoves = {
+    ("<", "A"): (">", ">", "^", "A"),
+    ("<", "^"): ( ">", "^", "A"),
+    (">", "A"): ("^", "A"),
+    (">", "^"): ('<', '^',  'A'),
+    (">", "v"): ("<", "A"),
+    ("A", "<"): ("v", "<", "<", "A"),
+    ("A", ">"): ("v", "A"),
+    ("A", "^"): ("<", "A"),
+    ("A", "v"): ("<", "v", "A"),
+    ("^", "<"): ("v", "<", "A"),
+    ("^", ">"): ("v", ">", "A"),
+    ("^", "A"): (">", "A"),
+    ("v", "<"): ("<", "A"),
+    ("v", ">"): (">", "A"),
+    ("v", "A"): ("^", ">","A"),
+    ("A", "A"): ("A",),
+    (">", ">"): ("A",),
+    ("<", "<"): ("A",),
+    ("<", "v"): (">", "A",),
+    ("^", "^"): ("A",),
+    ("v", "v"): ("A",),
+}
 
-# inp = """\
-# 029A
-# """
+
+@functools.cache
+def lenOfNumpad(string, depth):
+    if depth == 0:
+        # print(string,end='')
+        return len(string)
+    return sum(lenOfNumpad(idealmoves[(string[i-1] if i > 0 else 'A', char)], depth - 1) for i, char in enumerate(string))
+
 
 numpad = {
     "A": (("0", "<"), ("3", "^")),
@@ -52,11 +80,7 @@ dirpad = {
  ('v', 'A'),
 """
 
-cache = {}
 def stepsFromDirPad(start, stop, depth=3, noopt=None):
-    global cache
-    if (depth==3 and (start[0], stop) in cache):
-        return (*cache[(start[0], stop)],)
     if start[0] == stop:
         return ((start,),)
     if depth > 0:
@@ -76,18 +100,6 @@ def stepsFromDirPad(start, stop, depth=3, noopt=None):
             if len(i) > minlen:
                 break
             res.append(i)
-        if (depth==3) and not noopt:
-            # figure out the best candidate
-            best = None
-            shortes = None
-            candidateshort = 0
-            for c in res:
-                candidateshort = len(sorted(runString("".join(map(lambda c: c[1], [(None, 'A'), *c[1:]])),stepsFromDirPad, noopt=True), key=len)[0])
-                if shortes is None or candidateshort < shortes:
-                    shortes = candidateshort
-                    best = c
-            res = [best]
-            cache[(start[0], stop)] = res
         return (*res,)
     return ()
 
@@ -98,7 +110,8 @@ def stepsFromNumPad(start, stop, depth=5, noopt=None):
     elif depth > 0:
         minlen = None
         res = []
-        for i in sorted( [
+        for i in sorted(
+            [
                 (start, *c)
                 for d in numpad[start[0]]
                 for c in stepsFromNumPad(d, stop, depth - 1, noopt=noopt)
@@ -114,17 +127,12 @@ def stepsFromNumPad(start, stop, depth=5, noopt=None):
         return (*res,)
     return ()
 
+
 def getvariants(char, prev, func, noopt):
     return [[d[1] for d in c[1:]] for c in func((prev, None), char, noopt=noopt)]
 
-cache2 = {}
+
 def runString(inp, func, noopt=False):
-    global cache2
-    if func == stepsFromDirPad and not noopt:
-        if inp in cache2:
-            return cache2[inp]
-        inps = inp.split('A', maxsplit=1)
-        print(inps, inp)
     prev = "A"
     candidates = ([],)
     for char in inp:
@@ -135,9 +143,8 @@ def runString(inp, func, noopt=False):
             for candidate in candidates
             for variant in variants
         ]
-    if func == stepsFromDirPad and not noopt:
-        cache2[inp] = {"".join(candidate) for candidate in candidates}
     return {"".join(candidate) for candidate in candidates}
+
 
 
 with open(sys.argv[1]) as f:
@@ -145,9 +152,7 @@ with open(sys.argv[1]) as f:
     summa = 0
     for line in inp.strip().split("\n"):
         res = runString(line, stepsFromNumPad)
-        for i in range(0,10):
-            print(f"{i} {len(res)}")
-            res = {q for r in res for q in runString(r, stepsFromDirPad)}
-        add = len(sorted(res, key=len)[0]) * int(line[:-1])
+        add = min(lenOfNumpad(c, 25) for c in res) * int(line[:-1])
         summa += add
+    print('')
     print(summa)
