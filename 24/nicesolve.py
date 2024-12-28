@@ -54,16 +54,40 @@ tnw OR pbm -> gnj
 """
 maxbit=12
 
+inp = """\
+x00: 0
+x01: 1
+x02: 0
+x03: 1
+x04: 0
+x05: 1
+y00: 0
+y01: 0
+y02: 1
+y03: 1
+y04: 0
+y05: 1
+
+x00 AND y00 -> z05
+x01 AND y01 -> z02
+x02 AND y02 -> z01
+x03 AND y03 -> z03
+x04 AND y04 -> z04
+x05 AND y05 -> z00
+"""
+maxbit=5
+
 with open(sys.argv[1]) as f:
     inp = f.read(); maxbit=45
     summa = 0
     system = {}
-    @functools.cache
+    # @functools.cache
     def func(i1, op=None, i2=None):
         if op is None:
             return i1[0]
         match op:
             case 'XOR':
+                # print(f"{system[i1]} ^ {system[i2]}")
                 return func(*system[i1]) ^ func(*system[i2])
             case 'OR':
                 return func(*system[i1]) | func(*system[i2])
@@ -89,9 +113,46 @@ with open(sys.argv[1]) as f:
     for l in inp2.split('\n'):
         i1, op, i2, _, out = l.split()
         system[out] = (i1, op, i2)
-    bits = "".join(str(func(*system[f"z{k:02}"])) for k in range(maxbit,-1, -1))
-    print(bits)
-    print(int(bits, base=2))
-    for k in range(maxbit,-1, -1):
+    # bits = "".join(str(func(*system[f"z{k:02}"])) for k in range(maxbit,-1, -1))
+    # print(bits)
+    # print(int(bits, base=2))
+    for k in range(maxbit,22, -1):
         print(f'z{k:02} {func2(*system[f"z{k:02}"])}')
     # for z(i) try x(i) + y(i)
+    system["z11"], system["vkq"] = system["vkq"], system["z11"]
+    # mmk z24
+    system["z24"], system["mmk"] = system["mmk"], system["z24"]
+    # x28 XOR y28 -> qdq
+    # y28 AND x28 -> pvb
+    system["qdq"], system["pvb"] = system["pvb"], system["qdq"]
+    # vsb AND dkp -> z38
+    # y38 XOR x38 -> vsb
+    # dkp XOR vsb -> hqh
+    system["z38"], system["hqh"] = system["hqh"], system["z38"]
+    # set to zero
+    for prefix in ('x', 'y'):
+        for k in range(maxbit+1):
+            system[f"{prefix}{k:02}"] = [(0,), None, f"{prefix}{k:02}"]
+    for k in range(maxbit):
+        kplus1 = k+1
+        system[f"y{k:02}"] = [(1,), None, f"y{k:02}"]
+        if func(*system[f"z{k:02}"]) != 1:
+            print(f'y=1,x=0 for {k} failed{func(*system[f"x{k:02}"])} {func(*system[f"y{k:02}"])} {func(*system[f"z{k:02}"])}')
+            bits = "".join(str(func(*system[f"z{k:02}"])) for k in range(maxbit+1))
+            print(bits)
+        system[f"x{k:02}"] = [(1,), None, f"x{k:02}"]
+        # print(f'i tried to set {system[f"x{k:02}"]}')
+        if func(*system[f"z{k:02}"]) != 0:
+            print(f'y=1,x=1 for {k} failed{func(*system[f"x{k:02}"])} {func(*system[f"y{k:02}"])} {func(*system[f"z{k:02}"])}')
+            bits = "".join(str(func(*system[f"z{k:02}"])) for k in range(maxbit+1))
+            print(bits)
+        if kplus1 <= maxbit and func(*system[f"z{kplus1:02}"]) != 1:
+            print(f'y=1,x=1 for k+1 {k} failed{func(*system[f"x{k:02}"])} {func(*system[f"y{k:02}"])} {func(*system[f"z{kplus1:02}"])}')
+            bits = "".join(str(func(*system[f"z{k:02}"])) for k in range(maxbit+1))
+            print(bits)
+        system[f"y{k:02}"] = [(0,), None, f"y{k:02}"]
+        if func(*system[f"z{k:02}"]) != 1:
+            print(f'y=0,x=1 for {k} failed{func(*system[f"x{k:02}"])} {func(*system[f"y{k:02}"])} {func(*system[f"z{k:02}"])}')
+            bits = "".join(str(func(*system[f"z{k:02}"])) for k in range(maxbit+1))
+            print(bits)
+        system[f"x{k:02}"] = [(0,), None, f"x{k:02}"]
