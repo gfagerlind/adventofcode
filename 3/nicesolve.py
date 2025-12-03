@@ -1,15 +1,17 @@
 import sys
-import re
-
-REGEX = r"mul\((\d{1,3}),(\d{1,3})\)"
-REGEX2 = r"((^|do\(\)).*?(don\'t\(\)|$))"
-
-
-def regex_multiply_sum(txt):
-    return sum(int(a) * int(b) for a, b in re.findall(REGEX, txt))
 
 
 with open(sys.argv[1]) as f:
-    txt = f.read().replace("\n", "")
-    print(regex_multiply_sum(txt))
-    print(regex_multiply_sum("".join(l[0] for l in re.findall(REGEX2, txt))))
+    nums = [[int(a) for a in l] for l  in f.read().split() ]
+    sum1 = 0
+    lsum = 0
+    for n in nums:
+        second = max(n[n.index(first:=max(n[:-1]))+1:])
+        sum1 += 10*first + second
+        pos = 0
+        for i in range(0,12):
+            currslice = n[pos:-11+i] if 11 > i else n[pos:]
+            found = max(currslice)
+            lsum += (10**(11 - i)) * found
+            pos += currslice.index(found) + 1
+    print(sum1, lsum)
