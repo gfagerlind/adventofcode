@@ -1,17 +1,16 @@
 #!/bin/python
-import sys
-from collections import Counter, defaultdict
-
-
-def createDict(l):
-    return defaultdict(lambda: 0, Counter(l))
-
-
-with open(sys.argv[1]) as f:
-    columns = tuple(zip(*[map(int, line.split()) for line in f.readlines()]))
-    # sort the two columns, zip them, apply the absolut diff and sum it
-    print(sum(map(lambda a, b: abs(a - b), *map(sorted, columns))))
-    # use Counter to get a dict with the key of the element, and the value of the number of duplicates
-    # default to 0
-    a, b = map(createDict, columns)
-    print(sum(k * a[k] * b[k] for k in a))
+with open("input2") as f:
+    first_res = 0
+    third_res = 0
+    res = 50
+    for i in f.read().split():
+        update = int(i[1:])
+        sign = 1 if i[0] == "R" else (-1)
+        if sign == 1:
+            third_res += (update + res) // 100
+        else:
+            third_res += (update + 100 - (res or 100)) // 100
+        res = (res + update * sign) % 100
+        if not res:
+            first_res += 1
+    print(first_res, third_res)
