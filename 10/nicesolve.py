@@ -1,56 +1,59 @@
 import sys
 import re
-import numpy as np
-import scipy
+from functools import cache, reduce
+from itertools import chain, combinations
+from collections import defaultdict
 def bitfield_as_str(i):
     return '{0:b}'.format(i)
-def stupid_method(m,a, g):
-    cs = {tuple(a)}
-    found = False
-    while not found:
-        new_cs = set()
-        for a in cs:
-            res = g - np.matmul(m,np.array(a))
-            if len(np.where(res < 0)[0]) > 0:
-                continue
-            if not any(res):
-                print(f"whoho {a}")
-                found = True
-            for i in range(len(a)):
-                b = [*a]
-                b[i] += 1
-                new_cs.add(tuple(b))
-        cs = new_cs
 with open(sys.argv[1]) as f:
-    tot_sum = 0
+    part1_sum = 0
+    part2_sum = 0
     for l in f.read().split("\n"):
         if not l:
             continue
-        buttons = set()
-        matrix = np.zeros((17,17))
-        c = 0
+        buttons = []
         for chunk in l.split():
             match chunk[0]:
                 case '[':
-                    goal = sum((1 if c == "#" else 0) << i for i, c in enumerate(chunk[1:-1]))
+                    goal = tuple((1 if c == "#" else 0) for c in chunk[1:-1])
                 case '(':
-                    buttons.add(sum(1 << int(c)  for c in chunk[1:-1].split(',')))
-                    for j in map(int,chunk[1:-1].split(',')):
-                        matrix[j,c] = 1
-                    c += 1
+                    buttons.append(tuple(int(c)  for c in chunk[1:-1].split(',')))
                 case '{':
-                    sum_goal = np.array([*map(int,chunk[1:-1].split(','))]).T
-        states = {0}
-        #m = np.column_stack((matrix[:sum_goal.shape[0],:c],sum_goal))
-        m = matrix[:sum_goal.shape[0],:c]
-        # test = np.array([1,3,0,3,1,2])
-        # print(np.matmul(m, test))
-        print(sum_goal)
-        # print(all(sum_goal.T == np.matmul(m, test)))
-        #print(scipy.linalg.lu(m, permute_l=True, check_finite=False)[1])
-        print(m)
-        res = stupid_method(m,np.zeros((c,)),sum_goal)
-        print(res)
-        print('net')
-    print(tot_sum)
-
+                    sum_goal = tuple(map(int,chunk[1:-1].split(',')))
+        all_button_combinations = set()
+        for x in range(len(buttons)+1):
+            all_button_combinations.update(combinations(range(len(buttons)),x))
+        parity_dict = defaultdict(list)
+        sum_pressed = {}
+        for bc in all_button_combinations:
+            sum_p = [0] * len(sum_goal)
+            for b in bc:
+                for i in buttons[b]:
+                    sum_p[i] += 1
+            parity = tuple(i %2 for i in sum_p)
+            parity_dict[parity] += [bc]
+            sum_pressed[bc] = sum_p
+        @cache
+        def solve(sum_goal, depth):
+            if min(sum_goal) < 0:
+                # if overshoot
+                return 9999999999999
+            if sum(sum_goal) == 0:
+                # if done
+                return 0
+            best = 9999999999999
+            parity = tuple(i %2 for i in sum_goal)
+            # look for parity
+            for bc in parity_dict[parity]:
+                # Not my own idea, but when you have an even set to push, to ideally press half of it twice will be the ideal way to push the whole
+                # find rest
+                rest = tuple((i-sum) // 2 for i, sum in zip(sum_goal, sum_pressed[bc]))
+                best = min(best, len(bc) + 2 * solve(rest, depth+1))
+            print(sum_goal, best, depth)
+            return best
+        part1_sum += min(map(len,parity_dict[goal]))
+        print(mysum:=solve(sum_goal, depth=0))
+        part2_sum += mysum
+        print('--------------------------')
+    print(part1_sum)
+    print(part2_sum)
